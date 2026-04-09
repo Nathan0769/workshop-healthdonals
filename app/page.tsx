@@ -27,12 +27,16 @@ export default function Home() {
       </div>
       <CartFooter />
       {isAdmin && (
-        <Link
-          href="/items/new"
-          className="fixed bottom-6 right-6 rounded-xl bg-black px-5 py-3 font-semibold text-white shadow-lg"
-        >
-          + New
-        </Link>
+        <div className="pointer-events-none fixed bottom-0 left-1/2 w-full max-w-md -translate-x-1/2">
+          <div className="pointer-events-auto absolute bottom-24 right-4">
+            <Link
+              href="/items/new"
+              className="rounded-xl bg-black px-5 py-3 font-semibold text-white shadow-lg"
+            >
+              + New
+            </Link>
+          </div>
+        </div>
       )}
     </div>
   );

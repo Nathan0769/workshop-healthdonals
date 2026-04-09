@@ -1,21 +1,28 @@
 "use client";
 
 import Image from "next/image";
-import { ShoppingCart, User } from "lucide-react";
+import { ShoppingCart, User, Settings } from "lucide-react";
 import { useUserStore } from "@/store/user-store";
 import { useCartStore } from "@/store/cart-store";
+import { useAdminModeStore } from "@/store/admin-mode-store";
+import { Toggle } from "@/components/ui/toggle";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function Header() {
   const userName = useUserStore((s) => s.userName);
+  const isAdmin = useUserStore((s) => s.isAdmin);
   const logout = useUserStore((s) => s.logout);
   const totalCount = useCartStore((s) =>
     Object.values(s.items).reduce((acc, e) => acc + e.quantity, 0)
   );
+  const isAdminMode = useAdminModeStore((s) => s.isAdminMode);
+  const toggleAdminMode = useAdminModeStore((s) => s.toggleAdminMode);
   const router = useRouter();
 
   const handleLogout = () => {
     logout();
+    toast.success("À bientôt !");
     router.push("/");
   };
 
@@ -30,7 +37,17 @@ export function Header() {
         />
         <span className="text-lg font-semibold">Healthdonals</span>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        {isAdmin && (
+          <Toggle
+            pressed={isAdminMode}
+            onPressedChange={toggleAdminMode}
+            size="sm"
+            aria-label="Admin mode"
+          >
+            <Settings size={16} />
+          </Toggle>
+        )}
         {userName && (
           <button
             onClick={handleLogout}

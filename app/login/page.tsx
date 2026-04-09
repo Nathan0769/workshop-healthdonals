@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/user-store";
 import Image from "next/image";
@@ -19,6 +20,7 @@ export default function LoginPage() {
     e.preventDefault();
     if (!name.trim()) return;
     setUserName(name.trim());
+    toast.success(`Bienvenue ${name.trim()} !`);
     router.push("/");
   };
 

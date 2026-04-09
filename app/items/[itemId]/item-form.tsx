@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import useSWR, { useSWRConfig } from "swr";
 import {
   Form,
   FormControl,
@@ -24,7 +25,8 @@ import {
 import { FirebaseImageUpload } from "@/components/firebase-image-upload";
 import { useUserStore } from "@/store/user-store";
 import { CATEGORIES } from "@/lib/categories";
-import { setItem } from "@/lib/items";
+import { getItem, setItem, updateItem } from "@/lib/items";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   id: z.string().min(2).max(50),
@@ -43,45 +45,81 @@ function toSlug(name: string) {
     .replace(/\s+/g, "-");
 }
 
-export function ItemForm() {
+export function ItemForm({ itemId }: { itemId: string }) {
+  const isNew = itemId === "new";
   const isAdmin = useUserStore((s) => s.isAdmin);
   const router = useRouter();
+  const { mutate } = useSWRConfig();
 
   useEffect(() => {
     if (!isAdmin) router.push("/");
   }, [isAdmin, router]);
+
+  const { data: existingItem } = useSWR(
+    isNew ? null : `/items/${itemId}`,
+    () => getItem(itemId)
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { id: "", name: "", category: "", price: 0, image: undefined },
   });
 
+  useEffect(() => {
+    if (existingItem) {
+      form.reset({
+        id: existingItem.id,
+        name: existingItem.name,
+        category: existingItem.category,
+        price: existingItem.price / 100,
+        image: existingItem.image,
+      });
+    }
+  }, [existingItem, form]);
+
   const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue("name", e.target.value);
-    form.setValue("id", toSlug(e.target.value));
+    if (isNew) form.setValue("id", toSlug(e.target.value));
   };
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await setItem(values.id, {
-        name: values.name,
-        category: values.category,
-        price: Math.round(values.price * 100),
-        image: values.image,
-      });
+      if (isNew) {
+        await setItem(values.id, {
+          name: values.name,
+          category: values.category,
+          price: Math.round(values.price * 100),
+          image: values.image,
+        });
+      } else {
+        await updateItem(itemId, {
+          name: values.name,
+          category: values.category,
+          price: Math.round(values.price * 100),
+          image: values.image,
+          imagePath: existingItem?.imagePath,
+        });
+        mutate(`/items/${existingItem?.category}`);
+      }
+      toast.success(isNew ? "Produit créé !" : "Produit modifié !");
       router.push("/");
     } catch (err) {
-      form.setError("id", {
-        message: err instanceof Error ? err.message : "Erreur lors de la création",
-      });
+      const message = err instanceof Error ? err.message : "Erreur";
+      toast.error(message);
+      form.setError("id", { message });
     }
   };
 
   if (!isAdmin) return null;
+  if (!isNew && !existingItem) {
+    return <div className="px-4 text-gray-400">Chargement...</div>;
+  }
 
   return (
     <div className="flex flex-col gap-6 px-4">
-      <h1 className="text-xl font-bold">Add a new item</h1>
+      <h1 className="text-xl font-bold">
+        {isNew ? "Add a new item" : `Modifier ${existingItem?.name}`}
+      </h1>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <FormField
@@ -104,7 +142,7 @@ export function ItemForm() {
               <FormItem>
                 <FormLabel>ID</FormLabel>
                 <FormControl>
-                  <Input placeholder="salad-burger-123" {...field} />
+                  <Input placeholder="salad-burger-123" {...field} disabled={!isNew} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -152,7 +190,7 @@ export function ItemForm() {
             name="image"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Image URL</FormLabel>
+                <FormLabel>Image</FormLabel>
                 <FormControl>
                   <FirebaseImageUpload image={field.value} onChange={field.onChange} />
                 </FormControl>
