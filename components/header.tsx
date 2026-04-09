@@ -3,11 +3,15 @@
 import Image from "next/image";
 import { ShoppingCart, User } from "lucide-react";
 import { useUserStore } from "@/store/user-store";
+import { useCartStore } from "@/store/cart-store";
 import { useRouter } from "next/navigation";
 
 export function Header() {
   const userName = useUserStore((s) => s.userName);
   const logout = useUserStore((s) => s.logout);
+  const totalCount = useCartStore((s) =>
+    Object.values(s.items).reduce((acc, e) => acc + e.quantity, 0)
+  );
   const router = useRouter();
 
   const handleLogout = () => {
@@ -37,7 +41,7 @@ export function Header() {
           </button>
         )}
         <button className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium">
-          <span>0</span>
+          <span>{totalCount}</span>
           <ShoppingCart size={18} />
         </button>
       </div>

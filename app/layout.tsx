@@ -35,7 +35,7 @@ export default function RootLayout({
       >
         <div className="relative m-auto flex max-h-full min-h-full max-w-md flex-col gap-2 border-x py-4">
           <Header />
-          <div className="flex-1 overflow-hidden pt-2">{children}</div>
+          <div className="flex-1 overflow-y-auto pt-2">{children}</div>
         </div>
       </body>
     </html>

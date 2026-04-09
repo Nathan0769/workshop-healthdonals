@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/user-store";
 import Image from "next/image";
@@ -8,7 +8,12 @@ import Image from "next/image";
 export default function LoginPage() {
   const [name, setName] = useState("");
   const setUserName = useUserStore((s) => s.setUserName);
+  const userName = useUserStore((s) => s.userName);
   const router = useRouter();
+
+  useEffect(() => {
+    if (userName) router.push("/");
+  }, [userName, router]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
